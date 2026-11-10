@@ -31,9 +31,9 @@
   .mem .t { color: #6f6f78; font-size: 12px; margin-bottom: 2px; letter-spacing: .3px; }
   .mem .x { font-size: 13.5px; color: #dcdce2; }
   .mem.progress .x { color: #a9c6ff; }
-  .btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
   button {
-    flex: 1; min-width: 92px; padding: 10px 12px; border-radius: 10px;
+    min-width: 0; padding: 10px 12px; border-radius: 10px;
     border: 1px solid #35353c; background: #22222a; color: #e8e8ea;
     font-size: 13px; cursor: pointer;
   }
@@ -86,7 +86,7 @@
 </div>
 
 <div class="tip" id="tip">
-  记忆只存在本机 <code>~/.dsh/dsh-go-memory/memories.json</code>，不上传任何服务器。<br>
+  记忆只存在本机 <code>~/.dsh/dsh-go-memory/memories.jsonl + meta.json</code>，不上传任何服务器。<br>
   面板（右滑）只能画文字；导出、改频率、清空这类操作在这个页面做更方便。
 </div>
 

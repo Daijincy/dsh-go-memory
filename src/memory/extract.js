@@ -135,7 +135,7 @@ export function turnToMemory({ userText, assistantText, now = Date.now(), maxCha
   const pieces = []
   if (user !== '') pieces.push(`主人跟我说：「${user}」`)
   if (assistant !== '') pieces.push(`我回了他：${assistant}`)
-  const text = `${clockOf(now)} · ${pieces.join('；')}`
+  const text = pieces.join('；')
   const { delta, warm, cold } = affectionDelta(userText)
   return {
     text,
@@ -156,7 +156,7 @@ export function progressMemory({ topics, turns, from, to, now = Date.now() }) {
   const span = from > 0 ? `${clockOf(from)} → ${clockOf(to ?? now)}` : clockOf(now)
   const body = list.length > 0 ? `我们在忙这些：${list.join(' / ')}` : '我们聊了一阵子，没什么明确的任务'
   return {
-    text: `${span} · ${body}（共 ${turns} 轮）`,
+    text: `${body}（共 ${turns} 轮，${span}）`,
     at: now,
     kind: 'progress',
     bucket: 'work',
