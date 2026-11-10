@@ -1,0 +1,111 @@
+{
+  "name": "dsh-go-memory",
+  "version": "0.1.0-dshgo.7",
+  "type": "module",
+  "description": "每轮自动记录第一人称记忆与聊天进程，带好感度系统；dsh-go 原生面板展示，并把记忆注入后续回复的上下文。",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "dsh-go",
+    "memory",
+    "affection",
+    "plugin"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "index.js",
+    "src",
+    "mobile",
+    "cordis.patch.yml",
+    "README-dshgo.md"
+  ],
+  "engines": {
+    "dsh": ">=0.2.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-home-paths": ">=0.1.7-rc.2 <0.3.0-0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-home-paths": {
+      "optional": true
+    }
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dshGo": {
+    "v": 1,
+    "title": {
+      "zh": "我的记忆",
+      "en": "My Memory"
+    },
+    "icon": "account",
+    "contributes": {
+      "composer.strip": [
+        {
+          "id": "mem",
+          "icon": "account",
+          "panel": "memory"
+        }
+      ],
+      "panels": [
+        {
+          "id": "memory",
+          "title": {
+            "zh": "记忆",
+            "en": "Memories"
+          },
+          "icon": "account",
+          "placement": [
+            "session.tab",
+            "features"
+          ]
+        },
+        {
+          "id": "work",
+          "title": {
+            "zh": "工作记忆",
+            "en": "Work Memory"
+          },
+          "icon": "globe",
+          "placement": [
+            "session.tab",
+            "features"
+          ]
+        },
+        {
+          "id": "affection",
+          "title": {
+            "zh": "好感度",
+            "en": "Affection"
+          },
+          "icon": "running",
+          "placement": [
+            "session.tab",
+            "features"
+          ]
+        },
+        {
+          "id": "progress",
+          "title": {
+            "zh": "聊天进程",
+            "en": "Progress"
+          },
+          "icon": "model",
+          "placement": [
+            "session.tab",
+            "features"
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,8 @@
+- insert:
+    - id: dsh-go-memory
+      name: 'dsh-go-memory'
+      config:
+        injectEvery: 1
+        memoriesPerPrompt: 6
+        maxMemoryChars: 180
+        affectionStart: 50

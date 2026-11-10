@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的记忆 · dsh-go-memory</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 18px 16px 40px;
+    background: #131316; color: #e8e8ea;
+    font: 15px/1.55 -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: .5px; }
+  .sub { color: #8b8b93; font-size: 12.5px; margin-bottom: 18px; }
+  .card {
+    background: #1d1d22; border: 1px solid #2b2b31; border-radius: 14px;
+    padding: 14px 14px; margin-bottom: 12px;
+  }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .label { color: #9a9aa2; font-size: 12.5px; }
+  .score { font-size: 26px; font-weight: 600; letter-spacing: .5px; }
+  .level { color: #7fd18c; font-size: 13px; }
+  .bar { height: 6px; background: #2b2b31; border-radius: 99px; overflow: hidden; margin: 10px 0 4px; }
+  .bar > i { display: block; height: 100%; background: linear-gradient(90deg, #6b8cff, #7fd18c); width: 0; transition: width .4s; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 13px; margin-top: 8px; }
+  .kv b { color: #b9b9c2; font-weight: 500; }
+  .mem { padding: 10px 0; border-bottom: 1px dashed #2b2b31; }
+  .mem:last-child { border-bottom: 0; }
+  .mem .t { color: #6f6f78; font-size: 12px; margin-bottom: 2px; letter-spacing: .3px; }
+  .mem .x { font-size: 13.5px; color: #dcdce2; }
+  .mem.progress .x { color: #a9c6ff; }
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  button {
+    flex: 1; min-width: 92px; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid #35353c; background: #22222a; color: #e8e8ea;
+    font-size: 13px; cursor: pointer;
+  }
+  button.primary { background: #2f4bd6; border-color: #3d5cf0; }
+  button:active { transform: scale(.98); }
+  .empty { color: #7b7b84; font-size: 13.5px; }
+  .tip { color: #6f6f78; font-size: 12px; margin-top: 14px; line-height: 1.6; }
+  .toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+    background: #2a2a32; border: 1px solid #3a3a44; color: #eee;
+    padding: 9px 16px; border-radius: 999px; font-size: 13px;
+    opacity: 0; pointer-events: none; transition: opacity .25s;
+  }
+  .toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+<h1>我的记忆</h1>
+<div class="sub" id="sub">正在读取…</div>
+
+<div class="card">
+  <div class="row">
+    <div>
+      <div class="label">对主人的好感度</div>
+      <div class="score" id="score">--</div>
+    </div>
+    <div class="level" id="level">--</div>
+  </div>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="kv">
+    <b>范围</b><span id="sid">--</span>
+    <b>轮次</b><span id="turns">--</span>
+    <b>已注入</b><span id="injected">--</span>
+    <b>最近互动</b><span id="last">--</span>
+    <b>话题</b><span id="topics">--</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="label" style="margin-bottom:6px">记忆（第一人称，按时间倒序）</div>
+  <div id="list"><div class="empty">还没有记忆。</div></div>
+</div>
+
+<div class="btns">
+  <button class="primary" onclick="reload()">刷新</button>
+  <button onclick="copyAll()">复制全文</button>
+  <button onclick="setEvery(1)">每次读记忆</button>
+  <button onclick="setEvery(3)">每 3 轮读一次</button>
+  <button onclick="resetSession()">清空全部记忆</button>
+</div>
+
+<div class="tip" id="tip">
+  记忆只存在本机 <code>~/.dsh/dsh-go-memory/memories.json</code>，不上传任何服务器。<br>
+  面板（右滑）只能画文字；导出、改频率、清空这类操作在这个页面做更方便。
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let current = ''
+
+function toast(text) {
+  const node = document.getElementById('toast')
+  node.textContent = text
+  node.classList.add('on')
+  clearTimeout(window.__toastTimer)
+  window.__toastTimer = setTimeout(() => node.classList.remove('on'), 1800)
+}
+
+function clock(at) {
+  if (!at) return '—'
+  const d = new Date(at)
+  const p = n => String(n).padStart(2, '0')
+  return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
+async function reload() {
+  try {
+    const res = await fetch('/api/memory')
+    const data = await res.json()
+    const work = data.counts.work ?? 0
+    document.getElementById('sub').textContent =
+      `全局一池 · 共 ${data.counts.total} 条（工作 ${work} 条）· 数据在 ~/.dsh/dsh-go-memory/`
+    document.getElementById('score').textContent = `${data.affection.score} / 100`
+    document.getElementById('level').textContent = data.affection.level
+    document.getElementById('bar').style.width = `${data.affection.score}%`
+    document.getElementById('sid').textContent = '全对话共用'
+    document.getElementById('turns').textContent = data.counts.turns
+    document.getElementById('injected').textContent = `${data.counts.injected} 次`
+    document.getElementById('last').textContent = clock(data.memories[data.memories.length - 1]?.at)
+    document.getElementById('topics').textContent = (data.topics ?? []).join(' / ') || '—'
+    const memories = [...data.memories].reverse()
+    const list = document.getElementById('list')
+    if (memories.length === 0) {
+      list.innerHTML = '<div class="empty">记忆池还是空的。发一句话给我，这一轮结束就会写第一条。</div>'
+    } else {
+      list.innerHTML = memories.map(item => `
+        <div class="mem ${item.kind === 'progress' ? 'progress' : ''}">
+          <div class="t">${clock(item.at)}${item.kind === 'progress' ? ' · 进程' : ''}${item.kind === 'note' ? ' · 手写' : ''}${item.bucket === 'work' ? ' · 技术' : ''}</div>
+          <div class="x"></div>
+        </div>`).join('')
+      const cells = list.querySelectorAll('.mem .x')
+      memories.forEach((item, index) => { cells[index].textContent = item.text })
+    }
+    window.__export = data.text || ''
+  } catch (error) {
+    document.getElementById('sub').textContent = `读取失败：${error.message}`
+  }
+}
+
+async function copyAll() {
+  const text = window.__export || ''
+  if (!text) return toast('还没有可复制的内容')
+  try {
+    await navigator.clipboard.writeText(text)
+    toast('已复制全文')
+  } catch {
+    toast('复制被浏览器拦住了，请用「导出」下载')
+  }
+}
+
+async function setEvery(value) {
+  await fetch('/api/config', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ injectEvery: value }),
+  })
+  toast(value === 1 ? '以后每轮都读记忆' : `以后每 ${value} 轮读一次`)
+  reload()
+}
+
+async function resetSession() {
+  if (!confirm('确定清空全部记忆？这一池不按会话分，清的是所有历史。')) return
+  await fetch('/api/reset', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({}),
+  })
+  toast('已清空')
+  reload()
+}
+
+reload()
+setInterval(reload, 5000)
+</script>
+</body>
+</html>
